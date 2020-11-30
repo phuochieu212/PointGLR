@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import numpy as np
+import pandas as pd
 import os
 from torchvision import transforms
 from models.rscnn_ssn_ss import RSCNN_SSN, MetricLoss, ChamferLoss
@@ -243,7 +244,11 @@ def evaluate_svm(train_features, train_labels, test_features, test_labels):
     clf = LinearSVC()
     clf.fit(train_features, train_labels)
     pred = clf.predict(test_features)
-    return np.sum(test_labels == pred) * 1. / pred.shape[0]
+    results = pd.DataFrame({"pred" : pred, "gt": test_labels, "TP": pred == test_labels})
+    groupby_gt = results.groupby("gt")["TP"]
+    mean_per_cls_acc = groupby_gt.sum() / groupby_gt.count()
+
+    return np.sum(test_labels == pred) * 1. / pred.shape[0], mean_per_cls_acc
 
 
 def adjust_learning_rate(optimizer, epoch, args):
@@ -303,13 +308,13 @@ def validate(train_dataloader, test_dataloader, encoder, args):
         test_label = torch.cat(test_label, dim=0)
 
     # train svm
-    svm_acc = evaluate_svm(train_features.data.cpu().numpy(), train_label.data.cpu().numpy(), test_features.data.cpu().numpy(), test_label.data.cpu().numpy())
+    svm_acc, svm_mean_per_cls_acc = evaluate_svm(train_features.data.cpu().numpy(), train_label.data.cpu().numpy(), test_features.data.cpu().numpy(), test_label.data.cpu().numpy())
 
     if svm_acc > svm_best_acc40:
         svm_best_acc40 = svm_acc
 
     encoder.train()
-    print('ModelNet 40 results: svm acc=', svm_acc, 'best svm acc=', svm_best_acc40)
+    print(f"ModelNet 40 results: svm acc={svm_acc}, mean per-class accuracy={svm_mean_per_cls_acc}, best svm acc={svm_best_acc40}")
     print(args.name, args.arch)
 
     return svm_acc
