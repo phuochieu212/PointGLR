@@ -22,7 +22,7 @@ import random
 import yaml
 from sklearn.svm import LinearSVC
 torch.backends.cudnn.enabled = True
-torch.backends.cudnn.benchmark = True
+torch.backends.cudnn.benchmark = False
 
 parser = argparse.ArgumentParser(description='Global-Local Reasoning Training')
 parser.add_argument('--config', default='cfgs/config.yaml', type=str)
