@@ -248,7 +248,7 @@ def evaluate_svm(train_features, train_labels, test_features, test_labels):
     groupby_gt = results.groupby("gt")["TP"]
     mean_per_cls_acc = groupby_gt.sum() / groupby_gt.count()
 
-    return np.sum(test_labels == pred) * 1. / pred.shape[0], mean_per_cls_acc
+    return np.sum(test_labels == pred) * 1. / pred.shape[0], mean_per_cls_acc.mean().item()
 
 
 def adjust_learning_rate(optimizer, epoch, args):
